@@ -21,24 +21,14 @@ const optionDefinitions = [
     name: 'days',
     type: Number,
     description: 'Specify the number of days back to include',
-    defaultValue: 999999,
+    defaultValue: 5000,
   },
   {
     name: 'folder-depth',
     type: Number,
     description:
       'Specify the level of subfolders to look for repos (default: 1)',
-    defaulValue: 1,
-  },
-  {
-    name: 'dry-run',
-    type: Boolean,
-    description: 'Will execute script without syncing',
-  },
-  {
-    name: 'force',
-    type: Boolean,
-    description: 'Force push to the destination (implicit with reset)',
+    defaultValue: 1,
   },
   {
     name: 'reset',
@@ -58,6 +48,18 @@ const optionDefinitions = [
     description: 'Will not prompt',
     defaultValue: false,
   },
+  {
+    name: 'author',
+    type: String,
+    description:
+      'Author name',
+  },
+  {
+    name: 'project',
+    type: String,
+    description:
+      'Project name',
+  },
 ];
 
 const options = commandLineArgs(optionDefinitions);
@@ -67,7 +69,7 @@ if (options.help === true || !options.source || !options.destination) {
     {
       header: 'sync-external-contributions',
       content:
-        'Synchronize your external contributions into a fake GitHub repo',
+        'Synchronize your external contributions into your GitHub account',
     },
     {
       header: 'Options',
@@ -107,7 +109,7 @@ if (!options['dry-run'] && options.reset) {
 }
 
 const { stdout } = exec(
-  `cd ${options.source} && git standup -d ${options.days} -m${options['folder-depth']} -D iso-strict`,
+  `cd ${options.source} && git standup -d ${options.days} -m ${options['folder-depth']} -a ${options.author ? `"${options.author}"` : ''} -D iso-strict`,
 );
 
 const commits = stdout.split('\n').reduce((formattedCommits, commit) => {
@@ -130,8 +132,8 @@ const commits = stdout.split('\n').reduce((formattedCommits, commit) => {
 if (!options.silent) {
   if (commits.length === 0) {
     console.error("Couldn't find any commits");
-  } else if (commits.length < 2) {
-    console.log(`${commits.length} commit were found`);
+  } else if (commits.length === 1) {
+    console.log(`${commits.length} commit was found`);
   } else {
     console.log(`${commits.length} commits were found`);
   }
@@ -166,18 +168,18 @@ const commitSorted = commits.sort((a, b) => {
   return 0;
 });
 
-const outputFile = 'COMMITS';
+const outputFile = `COMMITS${options.project ? `_${options.project}` : ''}`;
 
 const nbNewCommits = commitSorted.reduce((count, commit) => {
   const grepStdout = exec(
-    `cd ${options.destination} && grep -R ${commit.commit} ${outputFile}`,
+    `cd ${options.destination} && grep -R ${commit.date} ${outputFile}`,
   ).stdout;
   const isNewCommit = !grepStdout;
 
   if (isNewCommit) {
     if (!options['dry-run']) {
       exec(
-        `cd ${options.destination} && echo "${commit.commit}" >> ${outputFile} && git add . && git commit -m "${commit.commit}" --date="${commit.date}"`,
+        `cd ${options.destination} && echo "${commit.date}" >> ${outputFile} && git add . && git commit -m "${commit.date}" --date="${commit.date}"`,
       );
     }
     return count + 1;
@@ -188,27 +190,4 @@ const nbNewCommits = commitSorted.reduce((count, commit) => {
 
 if (!options.silent) {
   console.log(`${nbNewCommits} commits have been created`);
-}
-
-if (options['dry-run'] && !options.silent) {
-  console.log('Dry run executed');
-} else if (!nbNewCommits && !options.silent) {
-  console.log('Nothing to do');
-} else {
-  let pushCommand = `cd ${options.destination} && git push origin master`;
-
-  if (options.force || options.reset) {
-    pushCommand += ' -f';
-  }
-
-  const { stderr } = exec(pushCommand);
-  if (!options.silent) {
-    if (!stderr) {
-      console.log(
-        'External contributions were successfully synchronized to GitHub',
-      );
-    } else {
-      console.error(stderr);
-    }
-  }
 }

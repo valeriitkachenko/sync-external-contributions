@@ -4,15 +4,11 @@
 
 Reads all your contributions you've authored on local repositories with [git-standup](https://github.com/kamranahmedse/git-standup) and create a GitHub contribution activity for every commits associated with you.
 
-It **does not copy** the content of the commit, to respect NDA and privacy it only list all commits SHA you've authored and write it to a file. This is totally safe.
+It **does not copy** the content of the commit, to respect NDA and privacy it only lists commit dates you've authored and write it to a file. This is totally safe.
 
 ## Why?
 
-This script exists because some contracts, projects, or businesses aren't using GitHub as source control. I found it odd that some weeks or months were missing in my GitHub contributions activity as if I wasn't active.
-
-#### Should external contributions belong there?
-
-To be honest, I'm not sure, but since private contributions can be showed and some are using this to show work activity, why not.
+For some projects, you may use other platforms such as GitLab and Bitbucket, so your daily activity won't be displayed on your GitHub page. This script solves the problem by duplicating information about your contributions to GitHub.
 
 ## Requirement
 
@@ -24,7 +20,7 @@ First, you'll need a git repository where the contributions will be synced.
 
 Create it where you want it (e.g. `~/external-contributions`), run `git init` inside and push your initial commit with an empty file named `COMMITS`.
 
-Create your repository on GitHub and add it as origin, origin will be automatically synced after each runs.
+Create your repository on GitHub and add it as origin.
 
 To sync every commits that you've done in `~/some-project` into `~/external-contributions`:
 
@@ -39,10 +35,10 @@ Options
   --destination string   Destination repository to sync contributions into
   --days number          Specify the number of days back to include
   --folder-depth         Specify the number of subfolders to look for repos in source
-  --dry-run              Will execute script without syncing
-  --force                Force push to the destination (implicit with reset)
   --reset                Reset the destination repository
   --silent               Will not prompt
+  --author               Author name, for example "John Doe"
+  --project              Project name
   -h, --help
 ```
 
